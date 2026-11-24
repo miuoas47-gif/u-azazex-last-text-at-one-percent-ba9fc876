@@ -22,6 +22,7 @@ TEXT = (
 )
 
 MAX_CHARS = 160
+MAX_BYTES = 160
 
 
 def fail(message):
@@ -39,13 +40,23 @@ def main():
     if len(TEXT) > MAX_CHARS:
         return fail("last text is %d characters, over the %d limit"
                     % (len(TEXT), MAX_CHARS))
+    encoded = TEXT.encode("utf-8")
+    if len(encoded) > MAX_BYTES:
+        return fail("last text is %d UTF-8 bytes, over the %d limit"
+                    % (len(encoded), MAX_BYTES))
 
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    os.makedirs(out_dir, exist_ok=True)
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+    except OSError as exc:
+        return fail("cannot create output directory %s: %s" % (out_dir, exc))
     path = os.path.join(out_dir, "entry.txt")
 
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(TEXT)
+    try:
+        with open(path, "w", encoding="utf-8", newline="") as handle:
+            handle.write(TEXT)
+    except OSError as exc:
+        return fail("cannot write %s: %s" % (path, exc))
 
     with open(path, "rb") as handle:
         raw = handle.read()
